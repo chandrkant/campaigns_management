@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Management</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    table, th, td { border: 1px solid #ddd; }
+    th, td { padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
+    .form-group { margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <h1>User Management</h1>
+
+  <div>
+    <h2>Add New User</h2>
+    <div class="form-group">
+      <label for="name">Name:</label>
+      <input type="text" id="name" required>
+    </div>
+    <div class="form-group">
+      <label for="email">Email:</label>
+      <input type="email" id="email" required>
+    </div>
+    <div class="form-group">
+      <label for="campaigns">Campaigns (comma separated):</label>
+      <input type="text" id="campaigns">
+    </div>
+    <button onclick="addUser()">Add User</button>
+  </div>
+
+  <div>
+    <h2>Filter Users by Campaign</h2>
+    <input type="text" id="campaignFilter" placeholder="Campaign name">
+    <button onclick="filterUsers()">Filter</button>
+  </div>
+
+  <h2>User List</h2>
+  <table id="userTable">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Campaigns</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      <!-- User rows will be appended here -->
+    </tbody>
+  </table>
+
+  <script>
+    async function fetchUsers(campaignName = '') {
+      let url = '/users';
+      if (campaignName) {
+        url += `?campaign_name=${campaignName}`;
+      }
+      const response = await fetch(url);
+      const users = await response.json();
+      const tbody = document.querySelector('#userTable tbody');
+      tbody.innerHTML = '';
+      users.forEach(user => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${user.id}</td>
+          <td>${user.name}</td>
+          <td>${user.email}</td>
+          <td>${JSON.stringify(user.campaigns_list)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function addUser() {
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      const campaigns = document.getElementById('campaigns').value.split(',').map(c => c.trim()).filter(c => c);
+
+      const response = await fetch('/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user: { name, email, campaigns_list: campaigns.map(name => ({ name })) } })
+      });
+
+      if (response.ok) {
+        fetchUsers();
+      } else {
+        alert('Failed to add user.');
+      }
+    }
+
+    function filterUsers() {
+      const campaignName = document.getElementById('campaignFilter').value;
+      fetchUsers(campaignName);
+    }
+
+    // Initial fetch of users
+    fetchUsers();
+  </script>
+</body>
+</html>
